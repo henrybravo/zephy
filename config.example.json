@@ -1,0 +1,22 @@
+{
+  "tfe_base_url": "https://app.terraform.io/api/v2",
+  "tfe_ssl_verify": true,
+  "tfe_org": "your-tfe-organization",
+  "azure_subscription": "your-azure-subscription-id",
+  "workspaces": ["workspace-1", "workspace-2"],
+  "resource_groups": ["prod-rg", "shared-rg"],
+  "tfe_token": null,
+  "tfe_creds_file": null,
+  "azure_creds_file": null,
+  "azcli_manually": false,
+  "azure_input_file": null,
+  "resource_mode": "primary",
+  "cache_ttl": 60,
+  "no_cache": false,
+  "output_dir": "./reports",
+  "save_resources": false,
+  "logfile_dir": "./logs",
+  "debug": false,
+  "dry_run": false,
+  "parallel": 10
+}

@@ -1,0 +1,1 @@
+"""Tests for Azure TFE Resources Toolkit."""

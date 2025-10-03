@@ -1,0 +1,9 @@
+# Azure SDK
+azure-identity==1.15.0
+azure-mgmt-resource==23.0.0
+
+# HTTP & API
+requests==2.31.0
+
+# Utilities
+python-dateutil==2.8.2

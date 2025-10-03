@@ -1,0 +1,302 @@
+"""Azure Resource Manager API client."""
+
+import json
+from pathlib import Path
+from typing import List, Optional
+
+from azure.identity import DefaultAzureCredential
+from azure.mgmt.resource import ResourceManagementClient
+from azure.mgmt.resource.resources.models import GenericResource
+
+from .config import AzureResource
+from .constants import PRIMARY_RESOURCE_TYPES
+from .utils import parse_provider_from_type
+
+from . import logger
+
+
+class AzureClient:
+    """Client for Azure Resource Manager API."""
+
+    def __init__(
+            self,
+            credential: DefaultAzureCredential,
+            subscription_id: str):
+        """Initialize Azure client.
+
+        Args:
+            credential: Azure credential object
+            subscription_id: Azure subscription ID
+        """
+        self.credential = credential
+        self.subscription_id = subscription_id
+        self.client = ResourceManagementClient(credential, subscription_id)
+        self.log = logger.get_logger(__name__)
+
+    def get_resource_groups(
+            self, rg_filter: Optional[List[str]] = None) -> List[str]:
+        """Get all resource groups in subscription, optionally filtered.
+
+        Args:
+            rg_filter: List of resource group names to include (None for all)
+
+        Returns:
+            List of resource group names
+        """
+        try:
+            resource_groups = []
+            for rg in self.client.resource_groups.list():
+                rg_name = rg.name
+                if rg_filter is None or rg_name in rg_filter:
+                    resource_groups.append(rg_name)
+
+            self.log.info(
+                f"Retrieved {
+                    len(resource_groups)} resource groups from Azure subscription")
+            return resource_groups
+
+        except Exception as e:
+            self.log.error(f"Failed to get resource groups: {e}")
+            raise
+
+    def get_resources_in_subscription(
+        self, resource_mode: str = "primary"
+    ) -> List[AzureResource]:
+        """Get all resources in subscription using efficient single API call.
+
+        Args:
+            resource_mode: 'primary' or 'detailed'
+
+        Returns:
+            List of AzureResource objects
+        """
+        try:
+            resources = []
+            # Use list() for all resources in subscription - more efficient
+            # than per-RG
+            for resource in self.client.resources.list():
+                azure_resource = self._convert_to_azure_resource(resource)
+                if self._should_include_resource(
+                        azure_resource, resource_mode):
+                    resources.append(azure_resource)
+
+            self.log.info(
+                f"Retrieved {
+                    len(resources)} resources from Azure subscription (mode: {resource_mode})")
+            return resources
+
+        except Exception as e:
+            self.log.error(f"Failed to get resources from subscription: {e}")
+            raise
+
+    def get_resources_in_resource_group(
+        self, resource_group: str, resource_mode: str = "primary"
+    ) -> List[AzureResource]:
+        """Get all resources in a specific resource group.
+
+        Args:
+            resource_group: Resource group name
+            resource_mode: 'primary' or 'detailed'
+
+        Returns:
+            List of AzureResource objects
+        """
+        try:
+            resources = []
+            for resource in self.client.resources.list_by_resource_group(
+                resource_group
+            ):
+                azure_resource = self._convert_to_azure_resource(resource)
+                if self._should_include_resource(
+                        azure_resource, resource_mode):
+                    resources.append(azure_resource)
+
+            self.log.debug(
+                f"Retrieved {
+                    len(resources)} resources from resource group '{resource_group}'")
+            return resources
+
+        except Exception as e:
+            self.log.error(
+                f"Failed to get resources from resource group '{resource_group}': {e}")
+            raise
+
+    def _convert_to_azure_resource(
+            self, resource: GenericResource) -> AzureResource:
+        """Convert Azure SDK resource object to AzureResource dataclass.
+
+        Args:
+            resource: Azure SDK GenericResource object
+
+        Returns:
+            AzureResource object
+        """
+        rid = resource.id or ""
+        return AzureResource(
+            id=rid.lower(),
+            name=resource.name or "",
+            type=resource.type or "",
+            resource_group=self._extract_resource_group_from_id(rid),
+            location=resource.location or "",
+            provider=parse_provider_from_type(resource.type or ""),
+            raw_data={
+                "id": resource.id,
+                "name": resource.name,
+                "type": resource.type,
+                "location": resource.location,
+                "tags": resource.tags,
+                "sku": resource.sku.as_dict() if resource.sku else None,
+            },
+        )
+
+    def _extract_resource_group_from_id(self, resource_id: str) -> str:
+        """Extract resource group name from Azure resource ID.
+
+        Args:
+            resource_id: Azure resource ID
+
+        Returns:
+            Resource group name
+        """
+        if not resource_id:
+            return ""
+
+        # Format: /subscriptions/{sub}/resourceGroups/{rg}/providers/...
+        parts = resource_id.split("/")
+        try:
+            rg_index = parts.index("resourceGroups")
+            return parts[rg_index + 1]
+        except (ValueError, IndexError):
+            return ""
+
+    def _should_include_resource(
+        self, resource: AzureResource, resource_mode: str
+    ) -> bool:
+        """Determine if resource should be included based on mode.
+
+        Args:
+            resource: AzureResource object
+            resource_mode: 'primary' or 'detailed'
+
+        Returns:
+            True if resource should be included
+        """
+        if resource_mode == "detailed":
+            return True  # Include all resources
+
+        if resource_mode == "primary":
+            return resource.type in PRIMARY_RESOURCE_TYPES
+
+        return False
+
+    def get_all_resources(
+        self, rg_filter: Optional[List[str]] = None, resource_mode: str = "primary"
+    ) -> List[AzureResource]:
+        """Get all resources, optionally filtered by resource groups.
+
+        Args:
+            rg_filter: List of resource group names to include
+            resource_mode: 'primary' or 'detailed'
+
+        Returns:
+            List of AzureResource objects
+        """
+        if rg_filter:
+            # Get resources from specific resource groups
+            all_resources = []
+            for rg in rg_filter:
+                try:
+                    resources = self.get_resources_in_resource_group(
+                        rg, resource_mode)
+                    all_resources.extend(resources)
+                except Exception as e:
+                    self.log.warning(f"Skipping resource group '{rg}': {e}")
+                    continue
+            return all_resources
+        else:
+            # Get all resources in subscription
+            return self.get_resources_in_subscription(resource_mode)
+
+
+def load_resources_from_json_file(file_path: str) -> List[AzureResource]:
+    """Load Azure resources from JSON file (for manual CLI mode).
+
+    Args:
+        file_path: Path to JSON file from 'az resource list'
+
+    Returns:
+        List of AzureResource objects
+
+    Raises:
+        FileNotFoundError: If file not found
+        ValueError: If JSON is invalid
+    """
+    json_path = Path(file_path)
+    if not json_path.exists():
+        raise FileNotFoundError(f"Azure resources file not found: {file_path}")
+
+    try:
+        with open(json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON in Azure resources file: {e}")
+
+    # Validate data is a list
+    if not isinstance(data, list):
+        raise ValueError("Azure resources file must contain a JSON array")
+
+    resources = []
+    for item in data:
+        # Validate item is dict
+        if not isinstance(item, dict):
+            raise ValueError("Each item in Azure resources file must be a JSON object")
+        # Validate required fields
+        if "id" not in item or not isinstance(item.get("id"), str):
+            raise ValueError("Each Azure resource must have a valid 'id' string field")
+
+        # Convert az resource list format to AzureResource
+        azure_resource = AzureResource(
+            id=item.get("id", "").lower(),
+            name=item.get("name", ""),
+            type=item.get("type", ""),
+            resource_group=item.get("resourceGroup", ""),
+            location=item.get("location", ""),
+            provider=parse_provider_from_type(item.get("type", "")),
+            raw_data=item,
+        )
+        resources.append(azure_resource)
+
+    logger.get_logger(__name__).info(
+        f"Loaded {len(resources)} resources from JSON file: {file_path}"
+    )
+    return resources
+
+
+def print_manual_azure_commands(subscription_id: str) -> None:
+    """Print Azure CLI commands for manual resource collection.
+
+    Args:
+        subscription_id: Azure subscription ID
+    """
+    print("Azure CLI Manual Mode Activated")
+    print()
+    print("Please run the following commands to generate resource data:")
+    print()
+    print("1. Export resource groups (optional for use with --resource-groups argument):")
+    print(
+        f"   az group list --subscription {subscription_id} --output json > azure_resource_groups_{subscription_id}.json"
+    )
+    print()
+    print("2. Export resources:")
+    print(
+        f"   az resource list --subscription {subscription_id} --output json > azure_resources_{subscription_id}.json"
+    )
+    print()
+    print("3. After files are generated, run the toolkit again with:")
+    print(
+        f"   python -m zephy --azure-input-file azure_resources_{subscription_id}.json [other options]"
+    )
+    print()
+    print(
+        "Files will be read from the current directory unless --azure-input-file specifies a full path."
+    )
