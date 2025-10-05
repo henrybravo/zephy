@@ -3,8 +3,8 @@
 [![PyPI version](https://badge.fury.io/py/zephy.svg)](https://badge.fury.io/py/zephy)
 [![Python Version](https://img.shields.io/pypi/pyversions/zephy.svg)](https://pypi.org/project/zephy/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-<!-- [![PyPI Downloads](https://img.shields.io/pypi/dm/zephy.svg)](https://pypi.org/project/zephy/)
-[![Downloads](https://pepy.tech/badge/zephy)](https://pepy.tech/project/zephy) -->
+[![PyPI Downloads](https://img.shields.io/pypi/dm/zephy.svg)](https://pypi.org/project/zephy/)
+[![Downloads](https://pepy.tech/badge/zephy)](https://pepy.tech/project/zephy)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 Azure TFE Resources Toolkit
