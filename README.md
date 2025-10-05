@@ -316,7 +316,6 @@ This guide assumes you already created an App Registration in Azure AD and have 
 
 ```bash
 export AZURE_CLIENT_ID="<your-azure-client-id>"
-export AZURE_CLIENT_SECRET="<your-client-secret>"
 export AZURE_TENANT_ID="<your-tenant-id>"
 export AZURE_SUBSCRIPTION_ID="<your-azure-subscription-id>"
 ```
