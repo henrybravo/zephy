@@ -57,8 +57,8 @@ Examples:
 
     # Required arguments (can come from config file)
     parser.add_argument(
-        "--tfe-org",
-        help="TFE organization name (required, can be in config file)")
+        "--tfe-org", help="TFE organization name (required, can be in config file)"
+    )
     parser.add_argument(
         "--azure-subscription",
         help="Azure subscription ID (required, can be in config file)",
@@ -182,7 +182,8 @@ Examples:
 
     # Version argument
     parser.add_argument(
-        "--version", "-v",
+        "--version",
+        "-v",
         action="version",
         version=f"%(prog)s {__version__}",
     )
@@ -213,8 +214,7 @@ def print_about() -> None:
     print(about_text)
 
 
-def parse_workspace_filter(
-        workspaces_arg: Optional[str]) -> Optional[List[str]]:
+def parse_workspace_filter(workspaces_arg: Optional[str]) -> Optional[List[str]]:
     """Parse workspace filter argument."""
     if not workspaces_arg:
         return None
@@ -242,7 +242,8 @@ def load_azure_resources(config, azure_cred) -> List:
     if config.azure_input_file:
         log.info(
             f"Loading Azure resources from manual input file: {
-                config.azure_input_file}")
+                config.azure_input_file}"
+        )
         return load_resources_from_json_file(config.azure_input_file)
 
     # Try cache first (unless disabled)
@@ -261,8 +262,7 @@ def load_azure_resources(config, azure_cred) -> List:
     # Fetch from API
     log.info("Fetching Azure resources from API")
     client = AzureClient(azure_cred, config.azure_subscription)
-    resources = client.get_all_resources(
-        config.resource_groups, config.resource_mode)
+    resources = client.get_all_resources(config.resource_groups, config.resource_mode)
 
     # Save to cache if requested
     if config.save_resources:
@@ -332,8 +332,7 @@ def main() -> int:
             config_file_data = load_config_from_file(cli_args.config)
 
         # Parse filter arguments
-        workspace_filter = parse_workspace_filter(
-            getattr(cli_args, "workspaces", None))
+        workspace_filter = parse_workspace_filter(getattr(cli_args, "workspaces", None))
         rg_filter = parse_resource_group_filter(
             getattr(cli_args, "resource_groups", None)
         )
@@ -359,12 +358,14 @@ def main() -> int:
             parser.error(
                 "--tfe-org is required. Provide it via:\n"
                 "  1. Command line: --tfe-org <org-name>\n"
-                "  2. Config file: --config <config.json> (with 'tfe_org' field)")
+                "  2. Config file: --config <config.json> (with 'tfe_org' field)"
+            )
         if not config.azure_subscription:
             parser.error(
                 "--azure-subscription is required. Provide it via:\n"
                 "  1. Command line: --azure-subscription <subscription-id>\n"
-                "  2. Config file: --config <config.json> (with 'azure_subscription' field)")
+                "  2. Config file: --config <config.json> (with 'azure_subscription' field)"
+            )
 
         # Setup logging
         setup_logging(config.debug, config.logfile_dir)
@@ -407,9 +408,18 @@ def main() -> int:
             report, azure_resources, tfe_resources, config.output_dir
         )
 
+        # Calculate counts
+        resource_group_count = len(set(r.resource_group for r in azure_resources))
+        workspace_count = len(set(r.workspace for r in tfe_resources))
+
         # Print summary
         print_summary_report(
-            report, config.tfe_org, config.azure_subscription, generated_files
+            report,
+            config.tfe_org,
+            config.azure_subscription,
+            generated_files,
+            resource_group_count,
+            workspace_count,
         )
 
         log.info("Zephy completed successfully")
@@ -440,11 +450,13 @@ def print_dry_run_info(config) -> None:
     print(
         f"  Workspace Filter: {
             ', '.join(
-                config.workspaces) if config.workspaces else 'ALL'}")
+                config.workspaces) if config.workspaces else 'ALL'}"
+    )
     print(
         f"  Resource Group Filter: {
             ', '.join(
-                config.resource_groups) if config.resource_groups else 'ALL'}")
+                config.resource_groups) if config.resource_groups else 'ALL'}"
+    )
     print(f"  Resource Mode: {config.resource_mode}")
     print(f"  Parallel Requests: {config.parallel}")
     print()
@@ -461,8 +473,7 @@ def print_dry_run_info(config) -> None:
     print(
         "  [Azure] GET resources per RG → /subscriptions/{id}/resourceGroups/{rg}/resources (estimated)"
     )
-    print(
-        "  [TFE] GET workspaces → /api/v2/organizations/{org}/workspaces (paginated)")
+    print("  [TFE] GET workspaces → /api/v2/organizations/{org}/workspaces (paginated)")
     print(
         "  [TFE] GET state versions → /api/v2/workspaces/{ws-id}/current-state-version"
     )

@@ -15,10 +15,7 @@ def generate_timestamp() -> str:
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
-def write_csv_report(
-        filename: str,
-        data: List[dict],
-        fieldnames: List[str]) -> None:
+def write_csv_report(filename: str, data: List[dict], fieldnames: List[str]) -> None:
     """Write data to CSV file with UTF-8 BOM encoding.
 
     Args:
@@ -33,8 +30,7 @@ def write_csv_report(
             writer.writerows(data)
         logger.get_logger(__name__).info(f"Generated CSV report: {filename}")
     except Exception as e:
-        logger.get_logger(__name__).error(
-            f"Failed to write CSV report {filename}: {e}")
+        logger.get_logger(__name__).error(f"Failed to write CSV report {filename}: {e}")
         raise
 
 
@@ -59,21 +55,29 @@ def generate_resources_comparison_csv(
         workspace = match.workspace_names[0] if match.workspace_names else ""
 
         row = {
-            "resource_id": match.azure_resource.id
-            if match.azure_resource
-            else (match.tfe_resources[0].id if match.tfe_resources else ""),
-            "resource_name": match.azure_resource.name
-            if match.azure_resource
-            else (match.tfe_resources[0].name if match.tfe_resources else ""),
-            "resource_type": match.azure_resource.type
-            if match.azure_resource
-            else (match.tfe_resources[0].type if match.tfe_resources else ""),
+            "resource_id": (
+                match.azure_resource.id
+                if match.azure_resource
+                else (match.tfe_resources[0].id if match.tfe_resources else "")
+            ),
+            "resource_name": (
+                match.azure_resource.name
+                if match.azure_resource
+                else (match.tfe_resources[0].name if match.tfe_resources else "")
+            ),
+            "resource_type": (
+                match.azure_resource.type
+                if match.azure_resource
+                else (match.tfe_resources[0].type if match.tfe_resources else "")
+            ),
             "azure_rg": match.resource_group,
             "tfe_workspace": workspace,
             "match_status": match.match_status,
-            "provider": match.azure_resource.provider
-            if match.azure_resource
-            else (match.tfe_resources[0].provider if match.tfe_resources else ""),
+            "provider": (
+                match.azure_resource.provider
+                if match.azure_resource
+                else (match.tfe_resources[0].provider if match.tfe_resources else "")
+            ),
         }
         data.append(row)
 
@@ -279,22 +283,13 @@ def generate_all_reports(
     files.append(generate_unmanaged_resources_csv(report.matches, output_dir))
 
     # Multi-workspace resources report
-    files.append(
-        generate_multi_workspace_resources_csv(
-            report.matches,
-            output_dir))
+    files.append(generate_multi_workspace_resources_csv(report.matches, output_dir))
 
     # TFE resources inventory report
-    files.append(
-        generate_tfe_resources_inventory_csv(
-            tfe_resources,
-            output_dir))
+    files.append(generate_tfe_resources_inventory_csv(tfe_resources, output_dir))
 
     # Azure resources inventory report
-    files.append(
-        generate_azure_resources_inventory_csv(
-            azure_resources,
-            output_dir))
+    files.append(generate_azure_resources_inventory_csv(azure_resources, output_dir))
 
     return files
 
@@ -304,6 +299,8 @@ def print_summary_report(
     tfe_org: str,
     azure_subscription: str,
     generated_files: List[str],
+    resource_group_count: int = 0,
+    workspace_count: int = 0,
 ) -> None:
     """Print summary statistics to stdout.
 
@@ -318,13 +315,12 @@ def print_summary_report(
     print(f"TFE Organization: {tfe_org}")
     print()
     print("Azure Resources:")
-    print(f"  Total Resource Groups: N/A")  # We don't track RG count in report
+    print(f"  Total Resource Groups: {resource_group_count}")
     print(f"  Total Resources: {report.total_azure_resources}")
     print("  Primary Resources: N/A")  # We don't distinguish in report
     print()
     print("TFE Workspaces:")
-    # We don't track workspace count in report
-    print("  Total Workspaces: N/A")
+    print(f"  Total Workspaces: {workspace_count}")
     print(f"  Total Resources in State: {report.total_tfe_resources}")
     print()
     print("Comparison Results:")
@@ -334,17 +330,18 @@ def print_summary_report(
         print(
             f"  Matched Resources: {
                 report.matched_count} ({
-                percentage:.1f}%)")
+                percentage:.1f}%)"
+        )
     else:
         print(f"  Matched Resources: {report.matched_count}")
     print(f"  Unmanaged Azure Resources: {report.unmanaged_count}")
     if report.total_tfe_resources > 0:
-        orphaned_percentage = (report.orphaned_count /
-                               report.total_tfe_resources) * 100
+        orphaned_percentage = (report.orphaned_count / report.total_tfe_resources) * 100
         print(
             f"  Orphaned TFE Resources: {
                 report.orphaned_count} ({
-                orphaned_percentage:.1f}%)")
+                orphaned_percentage:.1f}%)"
+        )
     else:
         print(f"  Orphaned TFE Resources: {report.orphaned_count}")
     print(f"  Multi-Workspace Resources: {report.multi_workspace_count}")

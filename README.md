@@ -3,8 +3,8 @@
 [![PyPI version](https://badge.fury.io/py/zephy.svg)](https://badge.fury.io/py/zephy)
 [![Python Version](https://img.shields.io/pypi/pyversions/zephy.svg)](https://pypi.org/project/zephy/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-<!-- [![PyPI Downloads](https://img.shields.io/pypi/dm/zephy.svg)](https://pypi.org/project/zephy/)
-[![Downloads](https://pepy.tech/badge/zephy)](https://pepy.tech/project/zephy) -->
+[![PyPI Downloads](https://img.shields.io/pypi/dm/zephy.svg)](https://pypi.org/project/zephy/)
+[![Downloads](https://pepy.tech/badge/zephy)](https://pepy.tech/project/zephy)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 Azure TFE Resources Toolkit
@@ -316,7 +316,6 @@ This guide assumes you already created an App Registration in Azure AD and have 
 
 ```bash
 export AZURE_CLIENT_ID="<your-azure-client-id>"
-export AZURE_CLIENT_SECRET="<your-client-secret>"
 export AZURE_TENANT_ID="<your-tenant-id>"
 export AZURE_SUBSCRIPTION_ID="<your-azure-subscription-id>"
 ```

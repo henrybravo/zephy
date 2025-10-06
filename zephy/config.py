@@ -159,14 +159,16 @@ def load_config_from_file(config_path: str) -> Dict[str, Any]:
     if unknown_fields:
         logger.warning(
             f"Unknown fields in config file: {
-                ', '.join(unknown_fields)}")
+                ', '.join(unknown_fields)}"
+        )
 
     # Check for credentials in config file
     credential_fields = ["tfe_token"]
-    for field in credential_fields:
-        if field in data and data[field]:
+    for cred_field in credential_fields:
+        if cred_field in data and data[cred_field]:
             logger.warning(
-                f"Config file contains credential field '{field}'. Consider using environment variables instead.")
+                f"Config file contains credential field '{cred_field}'. Consider using environment variables instead."
+            )
 
     # Normalize array fields (accept both lists and comma-separated strings)
     for field_name in ["workspaces", "resource_groups"]:
@@ -191,7 +193,7 @@ def merge_configs(
 ) -> Config:
     """Merge CLI arguments with config file data (CLI takes precedence)."""
     # Start with defaults
-    merged = {
+    merged: Dict[str, Any] = {
         "tfe_org": "",
         "azure_subscription": "",
         "workspaces": [],
