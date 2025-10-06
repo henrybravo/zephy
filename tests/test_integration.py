@@ -120,6 +120,7 @@ class TestResourceMatchingIntegration:
                 resource_group="prod-rg",
                 location="eastus",
                 provider="Microsoft.Compute",
+                rg_tags="env:prod|team:web",
                 raw_data={"sku": "Standard_DS1_v2"}
             ),
             AzureResource(
@@ -129,6 +130,7 @@ class TestResourceMatchingIntegration:
                 resource_group="prod-rg",
                 location="eastus",
                 provider="Microsoft.Storage",
+                rg_tags="env:prod|team:infra",
                 raw_data={"sku": {"name": "Standard_LRS"}}
             ),
             AzureResource(
@@ -138,6 +140,7 @@ class TestResourceMatchingIntegration:
                 resource_group="dev-rg",
                 location="westus",
                 provider="Microsoft.Compute",
+                rg_tags="env:dev|team:dev",
                 raw_data={"sku": "Standard_DS1_v2"}
             )
         ]
@@ -151,6 +154,7 @@ class TestResourceMatchingIntegration:
                 provider="azurerm",
                 workspace="prod-workspace",
                 module_path="modules/web",
+                ws_tags="prod|weu|app1",
                 raw_data={"size": "Standard_DS1_v2"}
             ),
             TFEResource(
@@ -160,6 +164,7 @@ class TestResourceMatchingIntegration:
                 provider="azurerm",
                 workspace="prod-workspace",
                 module_path="modules/storage",
+                ws_tags="prod|weu|storage",
                 raw_data={"account_tier": "Standard"}
             ),
             TFEResource(
@@ -169,6 +174,7 @@ class TestResourceMatchingIntegration:
                 provider="azurerm",
                 workspace="staging-workspace",  # Multi-workspace
                 module_path="modules/storage",
+                ws_tags="staging|weu|storage",
                 raw_data={"account_tier": "Standard"}
             ),
             TFEResource(
@@ -178,6 +184,7 @@ class TestResourceMatchingIntegration:
                 provider="azurerm",
                 workspace="test-workspace",
                 module_path="",
+                ws_tags="test|weu|network",
                 raw_data={"address_space": ["10.0.0.0/16"]}
             )
         ]
@@ -232,6 +239,7 @@ class TestReportGenerationIntegration:
                 resource_group="test-rg",
                 location="eastus",
                 provider="Microsoft.Compute",
+                rg_tags="env:test",
                 raw_data={}
             )
         ]
@@ -244,6 +252,7 @@ class TestReportGenerationIntegration:
                 provider="azurerm",
                 workspace="test-workspace",
                 module_path="modules/compute",
+                ws_tags="test|compute",
                 raw_data={}
             )
         ]

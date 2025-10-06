@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.resource import ResourceManagementClient
@@ -59,13 +59,35 @@ class AzureClient:
             self.log.error(f"Failed to get resource groups: {e}")
             raise
 
+    def get_resource_group_tags(self) -> Dict[str, str]:
+        """Get tags for all resource groups in subscription.
+
+        Returns:
+            Dict mapping resource group name to tags string (pipe-separated)
+        """
+        try:
+            rg_tags = {}
+            for rg in self.client.resource_groups.list():
+                tags = rg.tags or {}
+                # Convert tags dict to pipe-separated string
+                tags_str = "|".join(f"{k}:{v}" for k, v in tags.items()) if tags else ""
+                rg_tags[rg.name] = tags_str
+
+            self.log.debug(f"Retrieved tags for {len(rg_tags)} resource groups")
+            return rg_tags
+
+        except Exception as e:
+            self.log.error(f"Failed to get resource group tags: {e}")
+            raise
+
     def get_resources_in_subscription(
-        self, resource_mode: str = "primary"
+        self, resource_mode: str = "primary", rg_tags: Optional[Dict[str, str]] = None
     ) -> List[AzureResource]:
         """Get all resources in subscription using efficient single API call.
 
         Args:
             resource_mode: 'primary' or 'detailed'
+            rg_tags: Dict mapping resource group names to tags strings
 
         Returns:
             List of AzureResource objects
@@ -75,7 +97,7 @@ class AzureClient:
             # Use list() for all resources in subscription - more efficient
             # than per-RG
             for resource in self.client.resources.list():
-                azure_resource = self._convert_to_azure_resource(resource)
+                azure_resource = self._convert_to_azure_resource(resource, rg_tags)
                 if self._should_include_resource(
                         azure_resource, resource_mode):
                     resources.append(azure_resource)
@@ -90,13 +112,14 @@ class AzureClient:
             raise
 
     def get_resources_in_resource_group(
-        self, resource_group: str, resource_mode: str = "primary"
+        self, resource_group: str, resource_mode: str = "primary", rg_tags: Optional[Dict[str, str]] = None
     ) -> List[AzureResource]:
         """Get all resources in a specific resource group.
 
         Args:
             resource_group: Resource group name
             resource_mode: 'primary' or 'detailed'
+            rg_tags: Dict mapping resource group names to tags strings
 
         Returns:
             List of AzureResource objects
@@ -106,7 +129,7 @@ class AzureClient:
             for resource in self.client.resources.list_by_resource_group(
                 resource_group
             ):
-                azure_resource = self._convert_to_azure_resource(resource)
+                azure_resource = self._convert_to_azure_resource(resource, rg_tags)
                 if self._should_include_resource(
                         azure_resource, resource_mode):
                     resources.append(azure_resource)
@@ -122,23 +145,27 @@ class AzureClient:
             raise
 
     def _convert_to_azure_resource(
-            self, resource: GenericResource) -> AzureResource:
+            self, resource: GenericResource, rg_tags: Optional[Dict[str, str]] = None) -> AzureResource:
         """Convert Azure SDK resource object to AzureResource dataclass.
 
         Args:
             resource: Azure SDK GenericResource object
+            rg_tags: Dict mapping resource group names to tags strings
 
         Returns:
             AzureResource object
         """
         rid = resource.id or ""
+        rg_name = self._extract_resource_group_from_id(rid)
+        tags_str = (rg_tags or {}).get(rg_name, "")
         return AzureResource(
             id=rid.lower(),
             name=resource.name or "",
             type=resource.type or "",
-            resource_group=self._extract_resource_group_from_id(rid),
+            resource_group=rg_name,
             location=resource.location or "",
             provider=parse_provider_from_type(resource.type or ""),
+            rg_tags=tags_str,
             raw_data={
                 "id": resource.id,
                 "name": resource.name,
@@ -201,13 +228,16 @@ class AzureClient:
         Returns:
             List of AzureResource objects
         """
+        # Get resource group tags
+        rg_tags = self.get_resource_group_tags()
+
         if rg_filter:
             # Get resources from specific resource groups
             all_resources = []
             for rg in rg_filter:
                 try:
                     resources = self.get_resources_in_resource_group(
-                        rg, resource_mode)
+                        rg, resource_mode, rg_tags)
                     all_resources.extend(resources)
                 except Exception as e:
                     self.log.warning(f"Skipping resource group '{rg}': {e}")
@@ -215,7 +245,7 @@ class AzureClient:
             return all_resources
         else:
             # Get all resources in subscription
-            return self.get_resources_in_subscription(resource_mode)
+            return self.get_resources_in_subscription(resource_mode, rg_tags)
 
 
 def load_resources_from_json_file(file_path: str) -> List[AzureResource]:
@@ -262,6 +292,7 @@ def load_resources_from_json_file(file_path: str) -> List[AzureResource]:
             resource_group=item.get("resourceGroup", ""),
             location=item.get("location", ""),
             provider=parse_provider_from_type(item.get("type", "")),
+            rg_tags="",  # RG tags not available in manual mode
             raw_data=item,
         )
         resources.append(azure_resource)

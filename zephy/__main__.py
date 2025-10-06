@@ -49,9 +49,9 @@ date: {__date__}
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python -m zephy --tfe-org my-org --azure-subscription abc123
-  python -m zephy --config config.json --debug
-  python -m zephy --tfe-org my-org --azure-subscription abc123 --dry-run
+  zephy --tfe-org my-org --azure-subscription abc123
+  zephy --config config.json --debug
+  zephy --tfe-org my-org --azure-subscription abc123 --dry-run
         """,
     )
 

@@ -192,6 +192,7 @@ def generate_tfe_resources_inventory_csv(
             "provider": resource.provider,
             "workspace": resource.workspace,
             "module_path": resource.module_path,
+            "ws_tags": resource.ws_tags,
         }
         data.append(row)
 
@@ -202,6 +203,7 @@ def generate_tfe_resources_inventory_csv(
         "provider",
         "workspace",
         "module_path",
+        "ws_tags",
     ]
     write_csv_report(filename, data, fieldnames)
     return filename
@@ -231,6 +233,7 @@ def generate_azure_resources_inventory_csv(
             "resource_group": resource.resource_group,
             "location": resource.location,
             "provider": resource.provider,
+            "rg_tags": resource.rg_tags,
         }
         data.append(row)
 
@@ -241,6 +244,7 @@ def generate_azure_resources_inventory_csv(
         "resource_group",
         "location",
         "provider",
+        "rg_tags",
     ]
     write_csv_report(filename, data, fieldnames)
     return filename

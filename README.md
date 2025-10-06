@@ -185,8 +185,8 @@ Generates five CSV files:
 1. **`resources_comparison_TIMESTAMP.csv`**: All resources with match status
 2. **`unmanaged_resources_TIMESTAMP.csv`**: Azure resources NOT in TFE
 3. **`multi_workspace_resources_TIMESTAMP.csv`**: Resources managed by multiple workspaces
-4. **`tfe_resources_inventory_TIMESTAMP.csv`**: Complete inventory of all TFE resources
-5. **`azure_resources_inventory_TIMESTAMP.csv`**: Complete inventory of all Azure resources
+4. **`tfe_resources_inventory_TIMESTAMP.csv`**: Complete inventory of all TFE resources (includes workspace tags)
+5. **`azure_resources_inventory_TIMESTAMP.csv`**: Complete inventory of all Azure resources (includes resource group tags)
 
 ## Generating Primary Resource Types
 

@@ -23,6 +23,7 @@ def sample_azure_resources():
             resource_group="rg1",
             location="eastus",
             provider="Microsoft.Compute",
+            rg_tags="env:prod",
             raw_data={},
         ),
         AzureResource(
@@ -32,6 +33,7 @@ def sample_azure_resources():
             resource_group="rg1",
             location="eastus",
             provider="Microsoft.Storage",
+            rg_tags="env:prod",
             raw_data={},
         ),
         AzureResource(
@@ -41,6 +43,7 @@ def sample_azure_resources():
             resource_group="rg2",
             location="westus",
             provider="Microsoft.Compute",
+            rg_tags="env:dev",
             raw_data={},
         ),
     ]
@@ -57,6 +60,7 @@ def sample_tfe_resources():
             provider="azurerm",
             workspace="workspace1",
             module_path="",
+            ws_tags="prod|weu",
             raw_data={},
         ),
         TFEResource(
@@ -66,6 +70,7 @@ def sample_tfe_resources():
             provider="azurerm",
             workspace="workspace1",
             module_path="",
+            ws_tags="prod|weu",
             raw_data={},
         ),
         TFEResource(
@@ -75,6 +80,7 @@ def sample_tfe_resources():
             provider="azurerm",
             workspace="workspace2",  # Multi-workspace
             module_path="",
+            ws_tags="staging|weu",
             raw_data={},
         ),
         TFEResource(
@@ -84,6 +90,7 @@ def sample_tfe_resources():
             provider="azurerm",
             workspace="workspace1",
             module_path="",
+            ws_tags="prod|weu",
             raw_data={},
         ),  # Orphaned - no matching Azure resource
     ]
@@ -116,6 +123,7 @@ class TestMatchResources:
                 resource_group="rg1",
                 location="eastus",
                 provider="Microsoft.Compute",
+                rg_tags="",
                 raw_data={},
             )
         ]
@@ -127,6 +135,7 @@ class TestMatchResources:
                 provider="azurerm",
                 workspace="workspace1",
                 module_path="",
+                ws_tags="",
                 raw_data={},
             )
         ]

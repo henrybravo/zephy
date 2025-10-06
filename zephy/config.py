@@ -19,6 +19,7 @@ class AzureResource:
     resource_group: str
     location: str
     provider: str
+    rg_tags: str
     raw_data: dict
 
 
@@ -32,6 +33,7 @@ class TFEResource:
     provider: str
     workspace: str
     module_path: str
+    ws_tags: str
     raw_data: dict
 
 

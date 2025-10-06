@@ -27,6 +27,36 @@ class TestConfig:
         assert config.cache_ttl == 60
         assert config.parallel == 5
 
+    def test_azure_resource_with_tags(self):
+        """Test AzureResource with rg_tags field."""
+        from zephy.config import AzureResource
+        resource = AzureResource(
+            id="/subscriptions/test/resourceGroups/test-rg/providers/Microsoft.Compute/virtualMachines/test-vm",
+            name="test-vm",
+            type="Microsoft.Compute/virtualMachines",
+            resource_group="test-rg",
+            location="eastus",
+            provider="Microsoft.Compute",
+            rg_tags="env:prod|team:infra",
+            raw_data={}
+        )
+        assert resource.rg_tags == "env:prod|team:infra"
+
+    def test_tfe_resource_with_tags(self):
+        """Test TFEResource with ws_tags field."""
+        from zephy.config import TFEResource
+        resource = TFEResource(
+            id="/subscriptions/test/resourceGroups/test-rg/providers/Microsoft.Compute/virtualMachines/test-vm",
+            name="test-vm",
+            type="azurerm_linux_virtual_machine",
+            provider="azurerm",
+            workspace="test-workspace",
+            module_path="",
+            ws_tags="prd|weu|app1",
+            raw_data={}
+        )
+        assert resource.ws_tags == "prd|weu|app1"
+
     def test_invalid_resource_mode(self):
         """Test invalid resource_mode raises ValueError."""
         with pytest.raises(ValueError, match="resource_mode must be 'primary' or 'detailed'"):

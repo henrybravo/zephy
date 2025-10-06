@@ -185,6 +185,30 @@ class TFEClient:
                 len(workspaces)} workspaces from TFE organization '{organization}'")
         return workspaces
 
+    def get_workspace_tags(self, organization: str, workspace_name: str) -> str:
+        """Get tags for a specific workspace.
+
+        Args:
+            organization: TFE organization name
+            workspace_name: Workspace name
+
+        Returns:
+            Tags string (pipe-separated)
+        """
+        try:
+            response = self._get(
+                f"/organizations/{organization}/workspaces/{workspace_name}/tags"
+            )
+            tags_data = response.get("data", [])
+            # Extract tag names
+            tag_names = [tag.get("attributes", {}).get("name", "") for tag in tags_data if tag.get("attributes", {}).get("name")]
+            # Join with pipe separator
+            tags_str = "|".join(tag_names) if tag_names else ""
+            return tags_str
+        except Exception as e:
+            self.log.debug(f"Failed to get tags for workspace '{workspace_name}': {e}")
+            return ""
+
     def get_current_state_version(self, workspace_id: str) -> Optional[Dict]:
         """Get current state version for a workspace.
 
@@ -273,17 +297,21 @@ class TFEClient:
         return state_data
 
     def get_workspace_state_resources(
-            self, workspace: Dict) -> List[TFEResource]:
+            self, workspace: Dict, organization: str) -> List[TFEResource]:
         """Get all resources from a workspace's current state.
 
         Args:
             workspace: Workspace dictionary
+            organization: TFE organization name
 
         Returns:
             List of TFEResource objects
         """
         workspace_id = workspace["id"]
         workspace_name = workspace["attributes"]["name"]
+
+        # Get workspace tags
+        ws_tags = self.get_workspace_tags(organization, workspace_name)
 
         try:
             # Get current state version
@@ -331,6 +359,7 @@ class TFEClient:
                                         ),
                                         workspace=workspace_name,
                                         module_path=resource.get("module", ""),
+                                        ws_tags=ws_tags,
                                         raw_data=instance.get("attributes", {}),
                                     )
                                     resources.append(tfe_resource)
@@ -403,6 +432,7 @@ class TFEClient:
                                             ),
                                             workspace=workspace_name,
                                             module_path=resource.get("module", ""),
+                                            ws_tags=ws_tags,
                                             raw_data=instance.get("attributes", {}),
                                         )
                                         resources.append(tfe_resource)
@@ -519,6 +549,7 @@ class TFEClient:
                     provider="azurerm",
                     workspace=workspace_name,
                     module_path="",
+                    ws_tags=ws_tags,
                     raw_data={"output_value": output_value},
                 )
                 resources.append(tfe_resource)
@@ -571,6 +602,7 @@ class TFEClient:
                         provider="azurerm",
                         workspace=workspace_name,
                         module_path=resource.get("module", ""),
+                        ws_tags=ws_tags,
                         raw_data={
                             "inferred": True,
                             "reason": "State file not available for parsing",
@@ -609,7 +641,7 @@ class TFEClient:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit all tasks
             future_to_workspace = {
-                executor.submit(self.get_workspace_state_resources, ws): ws
+                executor.submit(self.get_workspace_state_resources, ws, organization): ws
                 for ws in workspaces
             }
 
