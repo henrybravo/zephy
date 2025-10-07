@@ -248,11 +248,14 @@ class AzureClient:
             return self.get_resources_in_subscription(resource_mode, rg_tags)
 
 
-def load_resources_from_json_file(file_path: str) -> List[AzureResource]:
+def load_resources_from_json_file(
+    file_path: str, rg_tags_file: Optional[str] = None
+) -> List[AzureResource]:
     """Load Azure resources from JSON file (for manual CLI mode).
 
     Args:
         file_path: Path to JSON file from 'az resource list'
+        rg_tags_file: Optional path to JSON file from 'az group list' for resource group tags
 
     Returns:
         List of AzureResource objects
@@ -275,6 +278,11 @@ def load_resources_from_json_file(file_path: str) -> List[AzureResource]:
     if not isinstance(data, list):
         raise ValueError("Azure resources file must contain a JSON array")
 
+    # Load resource group tags if file provided
+    rg_tags_map: Dict[str, str] = {}
+    if rg_tags_file:
+        rg_tags_map = _load_resource_group_tags_from_file(rg_tags_file)
+
     resources = []
     for item in data:
         # Validate item is dict
@@ -284,23 +292,82 @@ def load_resources_from_json_file(file_path: str) -> List[AzureResource]:
         if "id" not in item or not isinstance(item.get("id"), str):
             raise ValueError("Each Azure resource must have a valid 'id' string field")
 
+        # Extract resource group name
+        rg_name = item.get("resourceGroup", "")
+        # Get tags for this resource group from RG tags file
+        tags_str = rg_tags_map.get(rg_name, "")
+
+        # If no RG tags available, fall back to resource's own tags
+        if not tags_str and "tags" in item and item["tags"]:
+            resource_tags = item["tags"]
+            tags_str = "|".join(f"{k}:{v}" for k, v in resource_tags.items())
+
         # Convert az resource list format to AzureResource
         azure_resource = AzureResource(
             id=item.get("id", "").lower(),
             name=item.get("name", ""),
             type=item.get("type", ""),
-            resource_group=item.get("resourceGroup", ""),
+            resource_group=rg_name,
             location=item.get("location", ""),
             provider=parse_provider_from_type(item.get("type", "")),
-            rg_tags="",  # RG tags not available in manual mode
+            rg_tags=tags_str,
             raw_data=item,
         )
         resources.append(azure_resource)
 
-    logger.get_logger(__name__).info(
-        f"Loaded {len(resources)} resources from JSON file: {file_path}"
-    )
+    log = logger.get_logger(__name__)
+    log.info(f"Loaded {len(resources)} resources from JSON file: {file_path}")
+    if rg_tags_file:
+        rg_count = len([r for r in resources if r.rg_tags])
+        log.info(
+            f"Loaded resource group tags from {rg_tags_file} - {rg_count} resources have tags"
+        )
     return resources
+
+
+def _load_resource_group_tags_from_file(file_path: str) -> Dict[str, str]:
+    """Load resource group tags from az group list JSON file.
+
+    Args:
+        file_path: Path to JSON file from 'az group list'
+
+    Returns:
+        Dict mapping resource group name to tags string (pipe-separated)
+
+    Raises:
+        FileNotFoundError: If file not found
+        ValueError: If JSON is invalid
+    """
+    json_path = Path(file_path)
+    if not json_path.exists():
+        raise FileNotFoundError(f"Resource group tags file not found: {file_path}")
+
+    try:
+        with open(json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON in resource group tags file: {e}")
+
+    # Validate data is a list
+    if not isinstance(data, list):
+        raise ValueError("Resource group tags file must contain a JSON array")
+
+    rg_tags = {}
+    for item in data:
+        if not isinstance(item, dict):
+            continue
+        rg_name = item.get("name", "")
+        if not rg_name:
+            continue
+        tags = item.get("tags") or {}
+        # Convert tags dict to pipe-separated string
+        tags_str = "|".join(f"{k}:{v}" for k, v in tags.items()) if tags else ""
+        rg_tags[rg_name] = tags_str
+
+    logger.get_logger(__name__).debug(
+        f"Loaded tags for {len(rg_tags)} resource groups from {file_path}"
+    )
+    return rg_tags
 
 
 def print_manual_azure_commands(subscription_id: str) -> None:
@@ -313,23 +380,28 @@ def print_manual_azure_commands(subscription_id: str) -> None:
     print()
     print("Please run the following commands to generate resource data:")
     print()
-    print(
-        "1. Export resource groups (optional for use with --resource-groups argument):"
-    )
-    print(
-        f"   az group list --subscription {subscription_id} --output json > azure_resource_groups_{subscription_id}.json"
-    )
-    print()
-    print("2. Export resources:")
+    print("1. Export resources:")
     print(
         f"   az resource list --subscription {subscription_id} --output json > azure_resources_{subscription_id}.json"
     )
     print()
-    print("3. After files are generated, run the toolkit again with:")
+    print("2. Export resource groups (recommended for resource group tags):")
     print(
-        f"   python -m zephy --azure-input-file azure_resources_{subscription_id}.json [other options]"
+        f"   az group list --subscription {subscription_id} --output json > azure_resource_groups_{subscription_id}.json"
     )
     print()
+    print("3. After files are generated, run the toolkit again with:")
     print(
-        "Files will be read from the current directory unless --azure-input-file specifies a full path."
+        f"   python -m zephy --azure-input-file azure_resources_{subscription_id}.json \\"
+    )
+    print(
+        f"                   --azure-rg-tags-file azure_resource_groups_{subscription_id}.json [other options]"
+    )
+    print()
+    print("Note:")
+    print(
+        "  - The --azure-rg-tags-file argument is optional but recommended to include resource group tags in the output"
+    )
+    print(
+        "  - Files will be read from the current directory unless full paths are specified"
     )

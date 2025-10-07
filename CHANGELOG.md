@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2025-10-07
+
+### Added
+- **Resource Group Tags in Manual Mode**: Added `--azure-rg-tags-file` CLI argument to support resource group tags when using manual Azure CLI mode
+- **Intelligent Tag Fallback**: When using `--azure-input-file` without resource group tags file, automatically uses individual resource tags as fallback for the `rg_tags` column
+
+### Changed
+- Enhanced `load_resources_from_json_file()` to accept optional resource group tags file
+- Added helper function `_load_resource_group_tags_from_file()` to parse resource group tags from `az group list` output
+- Updated manual mode instructions to include resource group export command
+- Updated configuration to support `azure_rg_tags_file` parameter
+
+### Fixed
+- Fixed issue where `rg_tags` column was empty when using `--azure-input-file` (manual CLI mode)
+- Resource group tags are now properly populated in CSV reports for both API and manual modes
+
+### Technical Details
+- Resource group tags are prioritized when both RG tags file and resource tags are available
+- Tags are formatted as pipe-separated key:value pairs (`key1:value1|key2:value2`)
+- Updated README documentation with enhanced tag handling information
+
 ## [1.1.0] - 2025-10-06
 
 ### Added

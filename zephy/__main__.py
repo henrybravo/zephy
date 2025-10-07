@@ -116,6 +116,11 @@ Examples:
         default=argparse.SUPPRESS,
         help="Path to JSON file from az resource list (for manual mode)",
     )
+    parser.add_argument(
+        "--azure-rg-tags-file",
+        default=argparse.SUPPRESS,
+        help="Path to JSON file from az group list (for resource group tags in manual mode)",
+    )
 
     # Processing options
     parser.add_argument(
@@ -244,7 +249,9 @@ def load_azure_resources(config, azure_cred) -> List:
         log.info(
             f"Loading Azure resources from manual input file: {config.azure_input_file}"
         )
-        return load_resources_from_json_file(config.azure_input_file)
+        return load_resources_from_json_file(
+            config.azure_input_file, config.azure_rg_tags_file
+        )
 
     # Try cache first (unless disabled)
     if not config.no_cache:

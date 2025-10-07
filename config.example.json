@@ -10,6 +10,7 @@
   "azure_creds_file": null,
   "azcli_manually": false,
   "azure_input_file": null,
+  "azure_rg_tags_file": null,
   "resource_mode": "primary",
   "cache_ttl": 60,
   "no_cache": false,

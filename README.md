@@ -103,7 +103,8 @@ zephy \
 zephy \
   --tfe-org your-org \
   --azure-subscription $AZURE_SUBSCRIPTION_ID \
-  --azure-input-file azure_resources_$AZURE_SUBSCRIPTION_ID.json
+  --azure-input-file azure_resources_$AZURE_SUBSCRIPTION_ID.json \
+  --azure-rg-tags-file azure_resource_groups_$AZURE_SUBSCRIPTION_ID.json
 ```
 
 ## Authentication
@@ -165,6 +166,7 @@ Create a `config.json` file (see `config.example.json` for template):
   "azure_creds_file": null,
   "azcli_manually": false,
   "azure_input_file": null,
+  "azure_rg_tags_file": null,
   "resource_mode": "primary",
   "cache_ttl": 60,
   "no_cache": false,
@@ -187,8 +189,10 @@ Generates five CSV files:
 4. **`tfe_resources_inventory_TIMESTAMP.csv`**: Complete inventory of all TFE resources
 5. **`azure_resources_inventory_TIMESTAMP.csv`**: Complete inventory of all Azure resources
 
-- *TFE workspace tags are only available for commercial TFE workspaces* 
-- *Azure resource groups tags only when using the azure api and not the Manual Azure CLI Mode*
+- *Azure resource group tags (`rg_tags` column):*
+  - *When using Azure API mode: automatically fetched from resource groups*
+  - *When using Manual Azure CLI Mode: provide `--azure-rg-tags-file` with output from `az group list`*
+  - *Fallback: uses individual resource tags when no resource group tags are available*
 
 ## Generating Primary Resource Types
 

@@ -79,6 +79,7 @@ class Config:
     azure_creds_file: Optional[str] = None
     azcli_manually: bool = False
     azure_input_file: Optional[str] = None
+    azure_rg_tags_file: Optional[str] = None
 
     # TFE configuration
     tfe_base_url: str = "https://app.terraform.io/api/v2"
@@ -138,6 +139,7 @@ def load_config_from_file(config_path: str) -> Dict[str, Any]:
         "azure_creds_file": str,
         "azcli_manually": bool,
         "azure_input_file": (str, type(None)),
+        "azure_rg_tags_file": (str, type(None)),
         "tfe_base_url": str,
         "tfe_ssl_verify": bool,
         "resource_mode": str,
@@ -200,6 +202,7 @@ def merge_configs(
         "azure_creds_file": None,
         "azcli_manually": False,
         "azure_input_file": None,
+        "azure_rg_tags_file": None,
         "tfe_base_url": "https://app.terraform.io/api/v2",
         "tfe_ssl_verify": True,
         "resource_mode": "primary",
