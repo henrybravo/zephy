@@ -185,16 +185,27 @@ class TFEClient:
                 len(workspaces)} workspaces from TFE organization '{organization}'")
         return workspaces
 
-    def get_workspace_tags(self, organization: str, workspace_name: str) -> str:
+    def get_workspace_tags(self, organization: str, workspace_name: str, workspace_data: Optional[Dict] = None) -> str:
         """Get tags for a specific workspace.
 
         Args:
             organization: TFE organization name
             workspace_name: Workspace name
+            workspace_data: Optional workspace data from get_workspaces (more efficient)
 
         Returns:
             Tags string (pipe-separated)
         """
+        # First try to get tags from workspace data if available (more efficient)
+        if workspace_data:
+            attributes = workspace_data.get("attributes", {})
+            tag_names = attributes.get("tag-names", [])
+            if tag_names:
+                # Join with pipe separator
+                tags_str = "|".join(tag_names)
+                return tags_str
+
+        # Fallback: Make separate API call to get tags
         try:
             response = self._get(
                 f"/organizations/{organization}/workspaces/{workspace_name}/tags"
@@ -311,7 +322,7 @@ class TFEClient:
         workspace_name = workspace["attributes"]["name"]
 
         # Get workspace tags
-        ws_tags = self.get_workspace_tags(organization, workspace_name)
+        ws_tags = self.get_workspace_tags(organization, workspace_name, workspace)
 
         try:
             # Get current state version
