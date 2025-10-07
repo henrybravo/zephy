@@ -33,6 +33,7 @@ ZEPHY_LOGO = """
      ╚══════╝╚══════╝╚═╝     ╚═╝  ╚═╝   ╚═╝
 """
 
+
 def create_parser() -> argparse.ArgumentParser:
     """Create argument parser with all CLI options."""
     description = f"""{ZEPHY_LOGO}
@@ -56,7 +57,8 @@ Examples:
 
     # Required arguments (can come from config file)
     parser.add_argument(
-        "--tfe-org", help="TFE organization name (required, can be in config file)"
+        "--tfe-org",
+        help="TFE organization name (required unless --azcli-manually, can be in config file)",
     )
     parser.add_argument(
         "--azure-subscription",
@@ -240,8 +242,7 @@ def load_azure_resources(config, azure_cred) -> List:
     # Check for manual input file first
     if config.azure_input_file:
         log.info(
-            f"Loading Azure resources from manual input file: {
-                config.azure_input_file}"
+            f"Loading Azure resources from manual input file: {config.azure_input_file}"
         )
         return load_resources_from_json_file(config.azure_input_file)
 
@@ -353,9 +354,9 @@ def main() -> int:
         config = merge_configs(cli_dict, config_file_data)
 
         # Validate required arguments (can come from CLI or config file)
-        if not config.tfe_org:
+        if not config.azcli_manually and not config.tfe_org:
             parser.error(
-                "--tfe-org is required. Provide it via:\n"
+                "--tfe-org is required (unless --azcli-manually is used). Provide it via:\n"
                 "  1. Command line: --tfe-org <org-name>\n"
                 "  2. Config file: --config <config.json> (with 'tfe_org' field)"
             )
@@ -447,14 +448,10 @@ def print_dry_run_info(config) -> None:
     print(f"  TFE Organization: {config.tfe_org}")
     print(f"  Azure Subscription: {config.azure_subscription}")
     print(
-        f"  Workspace Filter: {
-            ', '.join(
-                config.workspaces) if config.workspaces else 'ALL'}"
+        f"  Workspace Filter: {', '.join(config.workspaces) if config.workspaces else 'ALL'}"
     )
     print(
-        f"  Resource Group Filter: {
-            ', '.join(
-                config.resource_groups) if config.resource_groups else 'ALL'}"
+        f"  Resource Group Filter: {', '.join(config.resource_groups) if config.resource_groups else 'ALL'}"
     )
     print(f"  Resource Mode: {config.resource_mode}")
     print(f"  Parallel Requests: {config.parallel}")

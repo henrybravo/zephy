@@ -18,10 +18,7 @@ from . import logger
 class AzureClient:
     """Client for Azure Resource Manager API."""
 
-    def __init__(
-            self,
-            credential: DefaultAzureCredential,
-            subscription_id: str):
+    def __init__(self, credential: DefaultAzureCredential, subscription_id: str):
         """Initialize Azure client.
 
         Args:
@@ -33,8 +30,7 @@ class AzureClient:
         self.client = ResourceManagementClient(credential, subscription_id)
         self.log = logger.get_logger(__name__)
 
-    def get_resource_groups(
-            self, rg_filter: Optional[List[str]] = None) -> List[str]:
+    def get_resource_groups(self, rg_filter: Optional[List[str]] = None) -> List[str]:
         """Get all resource groups in subscription, optionally filtered.
 
         Args:
@@ -51,8 +47,8 @@ class AzureClient:
                     resource_groups.append(rg_name)
 
             self.log.info(
-                f"Retrieved {
-                    len(resource_groups)} resource groups from Azure subscription")
+                f"Retrieved {len(resource_groups)} resource groups from Azure subscription"
+            )
             return resource_groups
 
         except Exception as e:
@@ -98,13 +94,12 @@ class AzureClient:
             # than per-RG
             for resource in self.client.resources.list():
                 azure_resource = self._convert_to_azure_resource(resource, rg_tags)
-                if self._should_include_resource(
-                        azure_resource, resource_mode):
+                if self._should_include_resource(azure_resource, resource_mode):
                     resources.append(azure_resource)
 
             self.log.info(
-                f"Retrieved {
-                    len(resources)} resources from Azure subscription (mode: {resource_mode})")
+                f"Retrieved {len(resources)} resources from Azure subscription (mode: {resource_mode})"
+            )
             return resources
 
         except Exception as e:
@@ -112,7 +107,10 @@ class AzureClient:
             raise
 
     def get_resources_in_resource_group(
-        self, resource_group: str, resource_mode: str = "primary", rg_tags: Optional[Dict[str, str]] = None
+        self,
+        resource_group: str,
+        resource_mode: str = "primary",
+        rg_tags: Optional[Dict[str, str]] = None,
     ) -> List[AzureResource]:
         """Get all resources in a specific resource group.
 
@@ -130,22 +128,23 @@ class AzureClient:
                 resource_group
             ):
                 azure_resource = self._convert_to_azure_resource(resource, rg_tags)
-                if self._should_include_resource(
-                        azure_resource, resource_mode):
+                if self._should_include_resource(azure_resource, resource_mode):
                     resources.append(azure_resource)
 
             self.log.debug(
-                f"Retrieved {
-                    len(resources)} resources from resource group '{resource_group}'")
+                f"Retrieved {len(resources)} resources from resource group '{resource_group}'"
+            )
             return resources
 
         except Exception as e:
             self.log.error(
-                f"Failed to get resources from resource group '{resource_group}': {e}")
+                f"Failed to get resources from resource group '{resource_group}': {e}"
+            )
             raise
 
     def _convert_to_azure_resource(
-            self, resource: GenericResource, rg_tags: Optional[Dict[str, str]] = None) -> AzureResource:
+        self, resource: GenericResource, rg_tags: Optional[Dict[str, str]] = None
+    ) -> AzureResource:
         """Convert Azure SDK resource object to AzureResource dataclass.
 
         Args:
@@ -237,7 +236,8 @@ class AzureClient:
             for rg in rg_filter:
                 try:
                     resources = self.get_resources_in_resource_group(
-                        rg, resource_mode, rg_tags)
+                        rg, resource_mode, rg_tags
+                    )
                     all_resources.extend(resources)
                 except Exception as e:
                     self.log.warning(f"Skipping resource group '{rg}': {e}")
@@ -313,7 +313,9 @@ def print_manual_azure_commands(subscription_id: str) -> None:
     print()
     print("Please run the following commands to generate resource data:")
     print()
-    print("1. Export resource groups (optional for use with --resource-groups argument):")
+    print(
+        "1. Export resource groups (optional for use with --resource-groups argument):"
+    )
     print(
         f"   az group list --subscription {subscription_id} --output json > azure_resource_groups_{subscription_id}.json"
     )

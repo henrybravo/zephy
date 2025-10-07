@@ -9,8 +9,7 @@ from azure.identity import DefaultAzureCredential
 from . import logger
 
 
-def get_azure_credential(
-        creds_file: Optional[str] = None) -> DefaultAzureCredential:
+def get_azure_credential(creds_file: Optional[str] = None) -> DefaultAzureCredential:
     """Get Azure credential using DefaultAzureCredential with optional custom credential file.
 
     Args:
@@ -26,8 +25,7 @@ def get_azure_credential(
     if creds_file:
         creds_path = Path(creds_file)
         if not creds_path.exists():
-            raise FileNotFoundError(
-                f"Azure credentials file not found: {creds_file}")
+            raise FileNotFoundError(f"Azure credentials file not found: {creds_file}")
 
         # For service principal from file, we rely on DefaultAzureCredential
         # which will pick up AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_TENANT_ID from env
@@ -44,9 +42,7 @@ def get_azure_credential(
     return DefaultAzureCredential()
 
 
-def get_tfe_token(
-        token: Optional[str] = None,
-        creds_file: Optional[str] = None) -> str:
+def get_tfe_token(token: Optional[str] = None, creds_file: Optional[str] = None) -> str:
     """Get TFE API token from various sources.
 
     Priority order:
@@ -82,8 +78,7 @@ def get_tfe_token(
     if creds_file:
         creds_path = Path(creds_file)
         if not creds_path.exists():
-            raise FileNotFoundError(
-                f"TFE credentials file not found: {creds_file}")
+            raise FileNotFoundError(f"TFE credentials file not found: {creds_file}")
 
         try:
             with open(creds_path, "r", encoding="utf-8") as f:
@@ -97,7 +92,8 @@ def get_tfe_token(
     # No token found
     raise ValueError(
         "TFE token not found. Provide via --tfe-token, TFE_TOKEN environment variable, "
-        "or --tfe-creds-file parameter")
+        "or --tfe-creds-file parameter"
+    )
 
 
 def load_azure_creds_from_file(creds_file: str) -> dict:
@@ -115,8 +111,7 @@ def load_azure_creds_from_file(creds_file: str) -> dict:
     """
     creds_path = Path(creds_file)
     if not creds_path.exists():
-        raise FileNotFoundError(
-            f"Azure credentials file not found: {creds_file}")
+        raise FileNotFoundError(f"Azure credentials file not found: {creds_file}")
 
     try:
         import json

@@ -327,20 +327,14 @@ def print_summary_report(
     total_compared = report.matched_count + report.unmanaged_count
     if total_compared > 0:
         percentage = (report.matched_count / total_compared) * 100
-        print(
-            f"  Matched Resources: {
-                report.matched_count} ({
-                percentage:.1f}%)"
-        )
+        print(f"  Matched Resources: {report.matched_count} ({percentage:.1f}%)")
     else:
         print(f"  Matched Resources: {report.matched_count}")
     print(f"  Unmanaged Azure Resources: {report.unmanaged_count}")
     if report.total_tfe_resources > 0:
         orphaned_percentage = (report.orphaned_count / report.total_tfe_resources) * 100
         print(
-            f"  Orphaned TFE Resources: {
-                report.orphaned_count} ({
-                orphaned_percentage:.1f}%)"
+            f"  Orphaned TFE Resources: {report.orphaned_count} ({orphaned_percentage:.1f}%)"
         )
     else:
         print(f"  Orphaned TFE Resources: {report.orphaned_count}")

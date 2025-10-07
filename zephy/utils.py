@@ -86,16 +86,14 @@ def retry_with_backoff(
 
                     last_exception = e
                     if attempt == max_retries:
-                        raise RetryableError(
-                            f"Max retries exceeded: {e}") from e
+                        raise RetryableError(f"Max retries exceeded: {e}") from e
 
                     import logging
 
                     logger = logging.getLogger(__name__)
                     logger.warning(
-                        f"Attempt {
-                            attempt +
-                            1} failed: {e}. Retrying in {delay}s...")
+                        f"Attempt {attempt + 1} failed: {e}. Retrying in {delay}s..."
+                    )
                     time.sleep(delay)
                     delay = min(delay * backoff_factor, max_delay)
 
@@ -165,9 +163,7 @@ def parse_provider_from_tfe_provider(provider_string: str) -> str:
         Provider name (e.g., 'azurerm')
     """
     # Extract provider name from registry.terraform.io/hashicorp/azurerm format
-    match = re.search(
-        r'registry\.terraform\.io/[^/]+/([^"\]]+)',
-        provider_string)
+    match = re.search(r'registry\.terraform\.io/[^/]+/([^"\]]+)', provider_string)
     if match:
         return match.group(1)
 

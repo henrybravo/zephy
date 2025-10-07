@@ -25,17 +25,14 @@ class CacheEntry:
         """Convert to dictionary for JSON serialization."""
         # Convert dataclass objects to dictionaries if needed
         serializable_data = self._make_serializable(self.data)
-        return {
-            "timestamp": self.timestamp.isoformat(),
-            "data": serializable_data}
+        return {"timestamp": self.timestamp.isoformat(), "data": serializable_data}
 
     def _make_serializable(self, obj: Any) -> Any:
         """Convert non-serializable objects to serializable format."""
         if isinstance(obj, list):
             return [self._make_serializable(item) for item in obj]
         elif isinstance(obj, dict):
-            return {key: self._make_serializable(
-                value) for key, value in obj.items()}
+            return {key: self._make_serializable(value) for key, value in obj.items()}
         elif hasattr(obj, "__dict__"):
             # Convert dataclass or other objects with __dict__ to dict
             result = {}
@@ -114,12 +111,10 @@ def load_from_cache(cache_file: str, ttl_minutes: int = 60) -> Optional[Any]:
         entry = CacheEntry.from_dict(entry_dict)
 
         if entry.is_fresh(ttl_minutes):
-            logger.get_logger(__name__).debug(
-                f"Loaded fresh cache from: {cache_file}")
+            logger.get_logger(__name__).debug(f"Loaded fresh cache from: {cache_file}")
             return entry.data
         else:
-            logger.get_logger(__name__).debug(
-                f"Cache expired for: {cache_file}")
+            logger.get_logger(__name__).debug(f"Cache expired for: {cache_file}")
             return None
 
     except Exception as e:

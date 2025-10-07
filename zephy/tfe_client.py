@@ -37,7 +37,9 @@ class RateLimiter:
 class TFEClient:
     """Client for Terraform Enterprise API."""
 
-    def __init__(self, token: str, base_url: str = DEFAULT_TFE_BASE_URL, ssl_verify: bool = True):
+    def __init__(
+        self, token: str, base_url: str = DEFAULT_TFE_BASE_URL, ssl_verify: bool = True
+    ):
         """Initialize TFE client.
 
         Args:
@@ -61,24 +63,20 @@ class TFEClient:
         # Test connectivity
         self.log.info(f"TFE Client initialized for {self.base_url}")
 
-    # type: ignore[return]
-    def _get(
-            self,
-            endpoint: str,
-            params: Optional[Dict] = None,
-            timeout: int = 30) -> Dict:
+    def _get(  # type: ignore[return]
+        self, endpoint: str, params: Optional[Dict] = None, timeout: int = 30
+    ) -> Dict:
         """Make authenticated GET request with rate limiting and retry logic."""
         url = f"{self.base_url}{endpoint}"
 
         for attempt in range(4):  # 3 retries + 1 initial attempt
             try:
                 self.rate_limiter.wait()
-                self.log.debug(
-                    f"Making TFE API request: {url} (attempt {
-                        attempt + 1})")
+                self.log.debug(f"Making TFE API request: {url} (attempt {attempt + 1})")
 
                 response = self.session.get(
-                    url, params=params, timeout=timeout, verify=self.ssl_verify)
+                    url, params=params, timeout=timeout, verify=self.ssl_verify
+                )
                 self.log.debug(f"Request sent, waiting for response...")
 
                 if response.status_code in [200, 201]:
@@ -87,15 +85,13 @@ class TFEClient:
                     # Retryable errors
                     wait_time = 2**attempt
                     self.log.warning(
-                        f"TFE API request failed with {
-                            response.status_code}, retrying in {wait_time}s...")
+                        f"TFE API request failed with {response.status_code}, retrying in {wait_time}s..."
+                    )
                     time.sleep(wait_time)
                     continue
                 else:
                     # Non-retryable error
-                    error_msg = f"TFE API request failed: {
-                        response.status_code} {
-                        response.reason}"
+                    error_msg = f"TFE API request failed: {response.status_code} {response.reason}"
                     try:
                         error_data = response.json()
                         if "errors" in error_data:
@@ -119,11 +115,9 @@ class TFEClient:
 
             except requests.RequestException as e:
                 if attempt == 3:
-                    raise requests.RequestException(
-                        f"TFE API network error: {e}")
+                    raise requests.RequestException(f"TFE API network error: {e}")
                 wait_time = 2**attempt
-                self.log.warning(
-                    f"TFE API network error, retrying in {wait_time}s...")
+                self.log.warning(f"TFE API network error, retrying in {wait_time}s...")
                 time.sleep(wait_time)
 
             except Exception as e:
@@ -143,8 +137,7 @@ class TFEClient:
         Returns:
             List of workspace dictionaries
         """
-        self.log.info(
-            f"Starting to fetch workspaces for organization: {organization}")
+        self.log.info(f"Starting to fetch workspaces for organization: {organization}")
         workspaces = []
         page = 1
 
@@ -181,11 +174,16 @@ class TFEClient:
             page += 1
 
         self.log.info(
-            f"Retrieved {
-                len(workspaces)} workspaces from TFE organization '{organization}'")
+            f"Retrieved {len(workspaces)} workspaces from TFE organization '{organization}'"
+        )
         return workspaces
 
-    def get_workspace_tags(self, organization: str, workspace_name: str, workspace_data: Optional[Dict] = None) -> str:
+    def get_workspace_tags(
+        self,
+        organization: str,
+        workspace_name: str,
+        workspace_data: Optional[Dict] = None,
+    ) -> str:
         """Get tags for a specific workspace.
 
         Args:
@@ -212,7 +210,11 @@ class TFEClient:
             )
             tags_data = response.get("data", [])
             # Extract tag names
-            tag_names = [tag.get("attributes", {}).get("name", "") for tag in tags_data if tag.get("attributes", {}).get("name")]
+            tag_names = [
+                tag.get("attributes", {}).get("name", "")
+                for tag in tags_data
+                if tag.get("attributes", {}).get("name")
+            ]
             # Join with pipe separator
             tags_str = "|".join(tag_names) if tag_names else ""
             return tags_str
@@ -230,8 +232,7 @@ class TFEClient:
             State version dictionary or None if no state exists
         """
         try:
-            response = self._get(
-                f"/workspaces/{workspace_id}/current-state-version")
+            response = self._get(f"/workspaces/{workspace_id}/current-state-version")
             # Validate response structure
             if not isinstance(response, dict):
                 raise ValueError(f"Invalid API response structure for state version")
@@ -244,7 +245,8 @@ class TFEClient:
                 # Workspace has no current state version, try to get the latest
                 # state version
                 self.log.debug(
-                    f"No current state version for workspace {workspace_id}, trying to get latest")
+                    f"No current state version for workspace {workspace_id}, trying to get latest"
+                )
                 return self._get_latest_state_version(workspace_id)
             raise
 
@@ -270,13 +272,13 @@ class TFEClient:
                 )
                 return state_versions[0]
             else:
-                self.log.debug(
-                    f"No state versions found for workspace {workspace_id}")
+                self.log.debug(f"No state versions found for workspace {workspace_id}")
                 return None
 
         except Exception as e:
             self.log.debug(
-                f"Failed to get latest state version for workspace {workspace_id}: {e}")
+                f"Failed to get latest state version for workspace {workspace_id}: {e}"
+            )
             return None
 
     def download_state_file(self, state_version: Dict) -> Dict:
@@ -292,7 +294,10 @@ class TFEClient:
         if not isinstance(state_version, dict) or "attributes" not in state_version:
             raise ValueError("Invalid state_version structure")
         attributes = state_version["attributes"]
-        if not isinstance(attributes, dict) or "hosted-json-state-download-url" not in attributes:
+        if (
+            not isinstance(attributes, dict)
+            or "hosted-json-state-download-url" not in attributes
+        ):
             raise ValueError("Invalid state_version attributes")
 
         hosted_url = attributes["hosted-json-state-download-url"]
@@ -308,7 +313,8 @@ class TFEClient:
         return state_data
 
     def get_workspace_state_resources(
-            self, workspace: Dict, organization: str) -> List[TFEResource]:
+        self, workspace: Dict, organization: str
+    ) -> List[TFEResource]:
         """Get all resources from a workspace's current state.
 
         Args:
@@ -336,10 +342,7 @@ class TFEClient:
                 return []
 
             attributes = state_version.get("attributes", {})
-            self.log.debug(
-                f"State version attributes keys: {
-                    list(
-                        attributes.keys())}")
+            self.log.debug(f"State version attributes keys: {list(attributes.keys())}")
             json_url = attributes.get("hosted-json-state-download-url")
             binary_url = attributes.get("hosted-state-download-url")
             self.log.debug(f"JSON URL: {json_url}")
@@ -349,17 +352,15 @@ class TFEClient:
             if json_url:
                 try:
                     self.log.info(
-                        f"Downloading JSON state file for workspace '{workspace_name}'")
+                        f"Downloading JSON state file for workspace '{workspace_name}'"
+                    )
                     state_data = self.download_state_file(state_version)
                     resources = []
                     for resource in state_data.get("resources", []):
-                        if resource.get(
-                                "mode") == "managed":  # Skip data sources
+                        if resource.get("mode") == "managed":  # Skip data sources
                             for instance in resource.get("instances", []):
-                                azure_id = instance.get(
-                                    "attributes", {}).get("id", "")
-                                if azure_id and azure_id.startswith(
-                                        "/subscriptions/"):
+                                azure_id = instance.get("attributes", {}).get("id", "")
+                                if azure_id and azure_id.startswith("/subscriptions/"):
                                     # Valid Azure resource
                                     tfe_resource = TFEResource(
                                         id=normalize_resource_id(azure_id),
@@ -376,19 +377,21 @@ class TFEClient:
                                     resources.append(tfe_resource)
 
                     self.log.info(
-                        f"Extracted {
-                            len(resources)} Azure resources from downloaded state file for workspace '{workspace_name}'")
+                        f"Extracted {len(resources)} Azure resources from downloaded state file for workspace '{workspace_name}'"
+                    )
                     return resources
                 except Exception as e:
                     self.log.warning(
-                        f"Failed to download/parse JSON state file for workspace '{workspace_name}': {e}")
+                        f"Failed to download/parse JSON state file for workspace '{workspace_name}': {e}"
+                    )
 
             # Try to download binary state file and parse as JSON (higher
             # priority than inference)
             if binary_url:
                 try:
                     self.log.info(
-                        f"Trying to download binary state file for workspace '{workspace_name}'")
+                        f"Trying to download binary state file for workspace '{workspace_name}'"
+                    )
                     # Download state data from hosted state URL (requires auth
                     # header)
                     response = requests.get(
@@ -403,16 +406,16 @@ class TFEClient:
                     # Get the response content as bytes first
                     state_bytes = response.content
                     self.log.debug(
-                        f"Downloaded state file content length: {
-                            len(state_bytes)} bytes")
+                        f"Downloaded state file content length: {len(state_bytes)} bytes"
+                    )
 
                     # Try to decompress if it's gzipped
                     try:
                         decompressed = gzip.decompress(state_bytes)
                         state_content = decompressed.decode("utf-8")
                         self.log.debug(
-                            f"Decompressed gzipped state file, new length: {
-                                len(state_content)}")
+                            f"Decompressed gzipped state file, new length: {len(state_content)}"
+                        )
                     except gzip.BadGzipFile:
                         # Not gzipped, treat as plain text
                         state_content = state_bytes.decode("utf-8")
@@ -422,14 +425,15 @@ class TFEClient:
                     try:
                         state_data = json.loads(state_content)
                         self.log.info(
-                            f"Binary state file parsed as JSON for workspace '{workspace_name}', extracting resources")
+                            f"Binary state file parsed as JSON for workspace '{workspace_name}', extracting resources"
+                        )
                         resources = []
                         for resource in state_data.get("resources", []):
-                            if resource.get(
-                                    "mode") == "managed":  # Skip data sources
+                            if resource.get("mode") == "managed":  # Skip data sources
                                 for instance in resource.get("instances", []):
-                                    azure_id = instance.get(
-                                        "attributes", {}).get("id", "")
+                                    azure_id = instance.get("attributes", {}).get(
+                                        "id", ""
+                                    )
                                     if azure_id and azure_id.startswith(
                                         "/subscriptions/"
                                     ):
@@ -450,36 +454,40 @@ class TFEClient:
 
                         if resources:
                             self.log.info(
-                                f"Extracted {
-                                    len(resources)} Azure resources with real IDs from binary state file for workspace '{workspace_name}'")
+                                f"Extracted {len(resources)} Azure resources with real IDs from binary state file for workspace '{workspace_name}'"
+                            )
                             return resources
                         else:
                             self.log.debug(
-                                f"No Azure resources found in binary state file for workspace '{workspace_name}'")
+                                f"No Azure resources found in binary state file for workspace '{workspace_name}'"
+                            )
 
                     except (ValueError, json.JSONDecodeError) as e:
                         self.log.warning(
-                            f"Binary state file content is not valid JSON for workspace '{workspace_name}': {e}")
+                            f"Binary state file content is not valid JSON for workspace '{workspace_name}': {e}"
+                        )
 
                 except Exception as e:
                     self.log.warning(
-                        f"Failed to download/parse binary state file for workspace '{workspace_name}': {e}")
+                        f"Failed to download/parse binary state file for workspace '{workspace_name}': {e}"
+                    )
 
             # Fallback: Try to get resource information from outputs (some
             # Azure resource IDs might be exposed there)
             try:
                 outputs = self._get_state_version_outputs(state_version)
                 resources_from_outputs = self._extract_resources_from_outputs(
-                    outputs, workspace_name
+                    outputs, workspace_name, ws_tags
                 )
                 if resources_from_outputs:
                     self.log.info(
-                        f"Extracted {
-                            len(resources_from_outputs)} Azure resources from outputs for workspace '{workspace_name}'")
+                        f"Extracted {len(resources_from_outputs)} Azure resources from outputs for workspace '{workspace_name}'"
+                    )
                     return resources_from_outputs
             except Exception as e:
                 self.log.debug(
-                    f"Failed to extract resources from outputs for workspace '{workspace_name}': {e}")
+                    f"Failed to extract resources from outputs for workspace '{workspace_name}': {e}"
+                )
 
             # Last resort: Try to infer Azure resource IDs from resource names and types
             # This is a heuristic approach for when state files are not
@@ -487,21 +495,21 @@ class TFEClient:
             resources_list = attributes.get("resources", [])
             if resources_list:
                 inferred_resources = self._infer_azure_resources_from_summary(
-                    resources_list, workspace_name
+                    resources_list, workspace_name, ws_tags
                 )
                 if inferred_resources:
                     self.log.info(
-                        f"Inferred {
-                            len(inferred_resources)} potential Azure resources from state summary for workspace '{workspace_name}'")
+                        f"Inferred {len(inferred_resources)} potential Azure resources from state summary for workspace '{workspace_name}'"
+                    )
                     return inferred_resources
 
             self.log.warning(
-                f"Workspace '{workspace_name}' has no extractable Azure resource information")
+                f"Workspace '{workspace_name}' has no extractable Azure resource information"
+            )
             return []
 
         except Exception as e:
-            self.log.error(
-                f"Failed to get state for workspace '{workspace_name}': {e}")
+            self.log.error(f"Failed to get state for workspace '{workspace_name}': {e}")
             return []
 
     def _get_state_version_outputs(self, state_version: Dict) -> List[Dict]:
@@ -533,7 +541,7 @@ class TFEClient:
             return []
 
     def _extract_resources_from_outputs(
-        self, outputs: List[Dict], workspace_name: str
+        self, outputs: List[Dict], workspace_name: str, ws_tags: str
     ) -> List[TFEResource]:
         """Try to extract Azure resource IDs from state version outputs.
 
@@ -568,7 +576,7 @@ class TFEClient:
         return resources
 
     def _infer_azure_resources_from_summary(
-        self, resources_list: List[Dict], workspace_name: str
+        self, resources_list: List[Dict], workspace_name: str, ws_tags: str
     ) -> List[TFEResource]:
         """Infer potential Azure resources from state summary when full state is not available.
 
@@ -643,8 +651,7 @@ class TFEClient:
         # Get workspaces
         workspaces = self.get_workspaces(organization, workspace_filter)
         if not workspaces:
-            self.log.warning(
-                f"No workspaces found in organization '{organization}'")
+            self.log.warning(f"No workspaces found in organization '{organization}'")
             return []
 
         # Download state files concurrently
@@ -652,7 +659,9 @@ class TFEClient:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit all tasks
             future_to_workspace = {
-                executor.submit(self.get_workspace_state_resources, ws, organization): ws
+                executor.submit(
+                    self.get_workspace_state_resources, ws, organization
+                ): ws
                 for ws in workspaces
             }
 
@@ -669,7 +678,6 @@ class TFEClient:
                     )
 
         self.log.info(
-            f"Retrieved {
-                len(all_resources)} total resources from {
-                len(workspaces)} workspaces")
+            f"Retrieved {len(all_resources)} total resources from {len(workspaces)} workspaces"
+        )
         return all_resources

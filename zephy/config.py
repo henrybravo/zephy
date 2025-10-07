@@ -157,10 +157,7 @@ def load_config_from_file(config_path: str) -> Dict[str, Any]:
             unknown_fields.append(key)
 
     if unknown_fields:
-        logger.warning(
-            f"Unknown fields in config file: {
-                ', '.join(unknown_fields)}"
-        )
+        logger.warning(f"Unknown fields in config file: {', '.join(unknown_fields)}")
 
     # Check for credentials in config file
     credential_fields = ["tfe_token"]

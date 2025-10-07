@@ -136,8 +136,7 @@ def get_unmanaged_resources(matches: List[MatchResult]) -> List[MatchResult]:
     return [m for m in matches if m.match_status == "unmanaged"]
 
 
-def get_multi_workspace_resources(
-        matches: List[MatchResult]) -> List[MatchResult]:
+def get_multi_workspace_resources(matches: List[MatchResult]) -> List[MatchResult]:
     """Extract resources managed by multiple workspaces.
 
     Args:

@@ -96,7 +96,6 @@ zephy --config config.json
 export AZURE_SUBSCRIPTION_ID="00000000-0000-0000-0000-000000000000"
 
 zephy \
-  --tfe-org your-org \
   --azure-subscription $AZURE_SUBSCRIPTION_ID \
   --azcli-manually
 
@@ -185,8 +184,11 @@ Generates five CSV files:
 1. **`resources_comparison_TIMESTAMP.csv`**: All resources with match status
 2. **`unmanaged_resources_TIMESTAMP.csv`**: Azure resources NOT in TFE
 3. **`multi_workspace_resources_TIMESTAMP.csv`**: Resources managed by multiple workspaces
-4. **`tfe_resources_inventory_TIMESTAMP.csv`**: Complete inventory of all TFE resources (includes workspace tags)
-5. **`azure_resources_inventory_TIMESTAMP.csv`**: Complete inventory of all Azure resources (includes resource group tags)
+4. **`tfe_resources_inventory_TIMESTAMP.csv`**: Complete inventory of all TFE resources
+5. **`azure_resources_inventory_TIMESTAMP.csv`**: Complete inventory of all Azure resources
+
+- *TFE workspace tags are only available for commercial TFE workspaces* 
+- *Azure resource groups tags only when using the azure api and not the Manual Azure CLI Mode*
 
 ## Generating Primary Resource Types
 

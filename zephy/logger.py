@@ -27,10 +27,12 @@ class RedactingFilter(logging.Filter):
         if hasattr(record, "msg") and record.msg:
             record.msg = redact_sensitive(str(record.msg))
             # Clean up Azure credential error messages
-            if ('EnvironmentCredential.get_token failed' in record.msg or
-                'ImdsCredential.get_token failed' in record.msg or
-                'ManagedIdentityCredential.get_token failed' in record.msg):
-                lines = record.msg.split('\n')
+            if (
+                "EnvironmentCredential.get_token failed" in record.msg
+                or "ImdsCredential.get_token failed" in record.msg
+                or "ManagedIdentityCredential.get_token failed" in record.msg
+            ):
+                lines = record.msg.split("\n")
                 record.msg = lines[0]
                 record.exc_text = None
         return True
@@ -43,9 +45,7 @@ def redact_sensitive(text: str) -> str:
     return text
 
 
-def setup_logging(
-        debug: bool = False,
-        logfile_dir: str = ".") -> logging.Logger:
+def setup_logging(debug: bool = False, logfile_dir: str = ".") -> logging.Logger:
     """Setup logging configuration with redaction.
 
     Args:
@@ -95,7 +95,13 @@ def setup_logging(
     logger.setLevel(level)
 
     # Suppress verbose Azure identity debug logs
-    logging.getLogger('azure.identity').setLevel(logging.WARNING)
+    logging.getLogger("azure.identity").setLevel(logging.WARNING)
+
+    # Suppress Azure HTTP request/response logging to DEBUG level (only show in debug mode)
+    logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(
+        logging.DEBUG
+    )
+    logging.getLogger("azure.core.pipeline.transport").setLevel(logging.DEBUG)
 
     # Remove any existing handlers to avoid duplicates
     for handler in logger.handlers[:]:
