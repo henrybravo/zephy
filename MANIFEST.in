@@ -1,3 +1,4 @@
 include PRIMARY_RESOURCE_TYPES.json
 include README.md
 include LICENSE
+include zephy-help.png
